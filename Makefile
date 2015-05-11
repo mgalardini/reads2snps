@@ -7,6 +7,8 @@ GENOME = genome.fasta
 FASTQC = FastQC/fastqc
 PLOIDY = 1
 THETA = 0.05
+MAXCOVERAGE = 100
+SEED = 100
 
 # Anything below this point should not be changed
 
@@ -42,14 +44,22 @@ $(TREAD1): $(TRIMDIR) $(READ1) $(READ2)
 	deinterleave_pairs -z -o $(TREAD1) $(TREAD2)
 trim: $(TREAD1)
 
+SUBSAMPLED1 = $(addsuffix .sub.fq.gz, $(TRIMDIR)/$(basename $(notdir $(READ1)) .txt))
+SUBSAMPLED2 = $(addsuffix .sub.fq.gz, $(TRIMDIR)/$(basename $(notdir $(READ2)) .txt))
+
+$(SUBSAMPLED1): $(TREAD1) $(GENOME)
+	sample=$$($(SRCDIR)/get_subsample $(GENOME) $$(interleave_pairs $(TREAD1) $(TREAD2) | count_seqs | awk '{print $$2}') --coverage 100) && \
+        seqtk sample -s$(SEED) $(TREAD1) $$sample > $(SUBSAMPLED1) && \
+	seqtk sample -s$(SEED) $(TREAD2) $$sample > $(SUBSAMPLED2)	
+
 # Alignment
 GINDEX = $(GENOME).bwt
 $(GINDEX): $(GENOME)
 	bwa index $(GENOME)
 
 ALIGNMENT = aln.sam
-$(ALIGNMENT): $(GINDEX) $(TREAD1)
-	bwa mem $(GENOME) $(TREAD1) $(TREAD2) > $(ALIGNMENT)
+$(ALIGNMENT): $(GINDEX) $(SUBSAMPLED1)
+	bwa mem $(GENOME) $(SUBSAMPLED1) $(SUBSAMPLED2) > $(ALIGNMENT)
 
 SORTEDALIGN = aln.sorted.bam
 $(SORTEDALIGN): $(ALIGNMENT)
