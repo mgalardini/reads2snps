@@ -1,9 +1,12 @@
 # Input files
 READ1 = READ1.txt.gz
 READ2 = READ2.txt.gz
+GENOME = genome.fasta
 
 # Directories and parameters
-FASTQC = FastQC/fastqc 
+FASTQC = FastQC/fastqc
+PLOIDY = 1
+THETA = 0.05
 
 # Anything below this point should not be changed
 
@@ -39,6 +42,29 @@ $(TREAD1): $(TRIMDIR) $(READ1) $(READ2)
 	deinterleave_pairs -z -o $(TREAD1) $(TREAD2)
 trim: $(TREAD1)
 
-all: fastqc trim
+# Alignment
+GINDEX = $(GENOME).bwt
+$(GINDEX): $(GENOME)
+	bwa index $(GENOME)
 
-.PHONY: all fastqc trim
+ALIGNMENT = aln.sam
+$(ALIGNMENT): $(GINDEX) $(TREAD1) $(TREAD2)
+	bwa mem $(GENOME) $(TREAD1) $(TREAD2) > $(ALIGNMENT)
+
+SORTEDALIGN = aln.sorted.bam
+$(SORTEDALIGN): $(ALIGNMENT)
+	samtools view -bS $(ALIGNMENT) -o aln.bam && \
+	samtools sort aln.bam aln.sorted
+
+BINDEX = $(SORTEDALIGN).bai
+$(BINDEX): $(SORTEDALIGN)
+	samtools index $(SORTEDALIGN)
+
+VARIANTS = var.vcf
+$(VARIANTS): $(BINDEX) $(SORTEDALIGN) $(GENOME)
+	freebayes -f $(GENOME) --ploidy $(PLOIDY) --theta $(THETA) $(SORTEDALIGN) > $(VARIANTS)
+variants: $(VARIANTS)
+
+all: fastqc trim variants
+
+.PHONY: all fastqc trim variants
