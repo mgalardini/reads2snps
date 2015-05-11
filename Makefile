@@ -48,7 +48,7 @@ $(GINDEX): $(GENOME)
 	bwa index $(GENOME)
 
 ALIGNMENT = aln.sam
-$(ALIGNMENT): $(GINDEX) $(TREAD1) $(TREAD2)
+$(ALIGNMENT): $(GINDEX) $(TREAD1)
 	bwa mem $(GENOME) $(TREAD1) $(TREAD2) > $(ALIGNMENT)
 
 SORTEDALIGN = aln.sorted.bam
