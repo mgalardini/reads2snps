@@ -6,14 +6,15 @@ GENOME = genome.fasta
 # Directories and parameters
 FASTQC = FastQC/fastqc
 PICARD = picard-tools-1.119
-SMRA = smar-0.1.15.jar
-SMRAMEM = 24
-SMRACPU = 10
+SRMA = srma-0.1.15.jar
+SRMAMEM = 24
+SRMACPU = 10
 PLOIDY = 1
 THETA = 0.05
 SPECIES = ecoli
 MAXCOVERAGE = 100
 SEED = 100
+FILTER = -f "DP > 10"
 
 # Anything below this point should not be changed
 
@@ -86,7 +87,7 @@ $(DINDEX): $(DEDUPALIGN)
 REALIGN = realn.dedup.bam
 $(REALIGN): $(DEDUPALIGN) $(GENOME) $(DINDEX)
 	java -jar $(PICARD)/CreateSequenceDictionary.jar R=$(GENOME)  O=$(GENOME).dict GENOME_ASSEMBLY=genome SPECIES=$(SPECIES)
-	java -Xmx$(SMRAMEM)g -jar $(SMRA) NUM_THREADS=$(SMRACPU) I=$(DEDUPALIGN) O=$(DEDUPALIGN) R=$(GENOME)
+	java -Xmx$(SRMAMEM)g -jar $(SRMA) NUM_THREADS=$(SRMACPU) I=$(DEDUPALIGN) O=$(DEDUPALIGN) R=$(GENOME)
 
 RINDEX = $(REALIGN).bai
 $(RINDEX): $(REALIGN)
@@ -94,7 +95,8 @@ $(RINDEX): $(REALIGN)
 
 VARIANTS = var.vcf
 $(VARIANTS): $(RINDEX) $(REALIGN) $(GENOME)
-	freebayes -f $(GENOME) --ploidy $(PLOIDY) --theta $(THETA) $(REALIGN) > $(VARIANTS)
+	freebayes -f $(GENOME) --ploidy $(PLOIDY) --theta $(THETA) $(REALIGN) > raw.vcf
+	vcffilter $(FILTER) raw.vcf > $(VARIANTS) 
 variants: $(VARIANTS)
 
 all: fastqc trim variants
