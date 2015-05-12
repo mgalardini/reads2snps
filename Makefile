@@ -5,8 +5,13 @@ GENOME = genome.fasta
 
 # Directories and parameters
 FASTQC = FastQC/fastqc
+PICARD = picard-tools-1.119
+SMRA = smar-0.1.15.jar
+SMRAMEM = 24
+SMRACPU = 10
 PLOIDY = 1
 THETA = 0.05
+SPECIES = ecoli
 
 # Anything below this point should not be changed
 
@@ -53,16 +58,33 @@ $(ALIGNMENT): $(GINDEX) $(TREAD1)
 
 SORTEDALIGN = aln.sorted.bam
 $(SORTEDALIGN): $(ALIGNMENT)
-	samtools view -bS $(ALIGNMENT) -o aln.bam && \
+	samtools view -bS $(ALIGNMENT) -q 25 -f 2 -F 256 -o aln.bam && \
 	samtools sort aln.bam aln.sorted
 
 BINDEX = $(SORTEDALIGN).bai
 $(BINDEX): $(SORTEDALIGN)
 	samtools index $(SORTEDALIGN)
 
+DEDUPALIGN = aln.dedup.bam
+$(DEDUPALIGN): $(SORTEDALIGN) $(BINDEX)
+	java -Xmx4g -jar $(PICARD)/MarkDuplicates.jar INPUT=$(SORTEDALIGN) OUTPUT=$(DEDUPALIGN) METRICS_FILE=metrics.txt REMOVE_DUPLICATES=true ASSUME_SORTED=true VALIDATION_STRINGENCY=LENIENT
+
+DINDEX = $(DEDUPALIGN).bai
+$(DINDEX): $(DEDUPALIGN)
+	samtools index $(DEDUPALIGN)
+
+REALIGN = realn.dedup.bam
+$(REALIGN): $(DEDUPALIGN) $(GENOME) $(DINDEX)
+	java -jar $(PICARD)/CreateSequenceDictionary.jar R=$(GENOME)  O=$(GENOME).dict GENOME_ASSEMBLY=genome SPECIES=$(SPECIES)
+	java -Xmx$(SMRAMEM)g -jar $(SMRA) NUM_THREADS=$(SMRACPU) I=$(DEDUPALIGN) O=$(DEDUPALIGN) R=$(GENOME)
+
+RINDEX = $(REALIGN).bai
+$(RINDEX): $(REALIGN)
+	samtools index $(REALIGN)
+
 VARIANTS = var.vcf
-$(VARIANTS): $(BINDEX) $(SORTEDALIGN) $(GENOME)
-	freebayes -f $(GENOME) --ploidy $(PLOIDY) --theta $(THETA) $(SORTEDALIGN) > $(VARIANTS)
+$(VARIANTS): $(RINDEX) $(REALIGN) $(GENOME)
+	freebayes -f $(GENOME) --ploidy $(PLOIDY) --theta $(THETA) $(REALIGN) > $(VARIANTS)
 variants: $(VARIANTS)
 
 all: fastqc trim variants
