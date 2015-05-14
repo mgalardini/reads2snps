@@ -95,7 +95,7 @@ $(RINDEX): $(REALIGN)
 
 VARIANTS = var.vcf
 $(VARIANTS): $(RINDEX) $(REALIGN) $(GENOME)
-	freebayes -f $(GENOME) --ploidy $(PLOIDY) --theta $(THETA) $(REALIGN) > raw.vcf
+	freebayes -f $(GENOME) --ploidy $(PLOIDY) --theta $(THETA) --standard-filters $(REALIGN) > raw.vcf
 	vcffilter $(FILTER) raw.vcf > $(VARIANTS) 
 variants: $(VARIANTS)
 
