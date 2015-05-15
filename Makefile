@@ -2,19 +2,24 @@
 READ1 = READ1.txt.gz
 READ2 = READ2.txt.gz
 GENOME = genome.fasta
+GBK = genome.gbk
+TARGET = target.fasta
 
 # Directories and parameters
 FASTQC = FastQC/fastqc
 PICARD = picard-tools-1.119
-SRMA = srma-0.1.15.jar
-SRMAMEM = 24
-SRMACPU = 10
+GATK = GATK
+PARSNP = Parsnp-Linux64-v1.2
+JAVA7 = jre1.7.0_76/bin/java
+JAVAMEM = 24
+CPU = 10
+TARGETDEPTH = 10
 PLOIDY = 1
 THETA = 0.05
 SPECIES = ecoli
 MAXCOVERAGE = 100
 SEED = 100
-FILTER = -f "DP > 10"
+FILTER = -f "DP > 10" -g "GQ > 20"
 
 # Anything below this point should not be changed
 
@@ -65,7 +70,7 @@ $(GINDEX): $(GENOME)
 
 ALIGNMENT = aln.sam
 $(ALIGNMENT): $(GINDEX) $(SUBSAMPLED1)
-	bwa mem $(GENOME) $(SUBSAMPLED1) $(SUBSAMPLED2) > $(ALIGNMENT)
+	bwa mem -t $(CPU) $(GENOME) $(SUBSAMPLED1) $(SUBSAMPLED2) > $(ALIGNMENT)
 
 SORTEDALIGN = aln.sorted.bam
 $(SORTEDALIGN): $(ALIGNMENT)
@@ -86,19 +91,73 @@ $(DINDEX): $(DEDUPALIGN)
 
 REALIGN = realn.dedup.bam
 $(REALIGN): $(DEDUPALIGN) $(GENOME) $(DINDEX)
-	java -jar $(PICARD)/CreateSequenceDictionary.jar R=$(GENOME)  O=$(GENOME).dict GENOME_ASSEMBLY=genome SPECIES=$(SPECIES)
-	java -Xmx$(SRMAMEM)g -jar $(SRMA) NUM_THREADS=$(SRMACPU) I=$(DEDUPALIGN) O=$(DEDUPALIGN) R=$(GENOME)
+	java -Xmx$(JAVAMEM)g -jar $(PICARD)/AddOrReplaceReadGroups.jar \
+	   I=$(DEDUPALIGN) O=$(DEDUPALIGN).group.bam RGPL=illumina RGLB=foo RGPU=run \
+	   RGSM=anysample CREATE_INDEX=true && \
+	java -jar $(PICARD)/CreateSequenceDictionary.jar R=$(GENOME) \
+	    O=$(basename $(GENOME)).dict GENOME_ASSEMBLY=genome SPECIES=$(SPECIES)
+	$(JAVA7) -Xmx$(JAVAMEM)g -jar $(GATK)/GenomeAnalysisTK.jar \
+	   -T RealignerTargetCreator \
+	   -R $(GENOME) \
+	   -I $(DEDUPALIGN).group.bam \
+	   -o $(DEDUPALIGN).group.bam.intervals && \
+	$(JAVA7) -Xmx$(JAVAMEM)g -jar $(GATK)/GenomeAnalysisTK.jar \
+	   -T IndelRealigner \
+	   -R $(GENOME) \
+	   -I $(DEDUPALIGN).group.bam \
+	   -targetIntervals $(DEDUPALIGN).group.bam.intervals \
+	   -o $(DEDUPALIGN).realn.bam && \
+	samtools calmd -brA $(DEDUPALIGN).realn.bam $(GENOME) > $(REALIGN)
 
 RINDEX = $(REALIGN).bai
 $(RINDEX): $(REALIGN)
 	samtools index $(REALIGN)
 
-VARIANTS = var.vcf
-$(VARIANTS): $(RINDEX) $(REALIGN) $(GENOME)
-	freebayes -f $(GENOME) --ploidy $(PLOIDY) --theta $(THETA) --standard-filters $(REALIGN) > raw.vcf
-	vcffilter $(FILTER) raw.vcf > $(VARIANTS) 
-variants: $(VARIANTS)
+MAPVARIANTS = map.vcf
+$(MAPVARIANTS): $(RINDEX) $(REALIGN) $(GENOME)
+	freebayes -f $(GENOME) --ploidy $(PLOIDY) --theta $(THETA) --genotype-qualities --standard-filters $(REALIGN) > raw.vcf
+	vcffilter $(FILTER) raw.vcf > $(MAPVARIANTS) 
+mapvariants: $(MAPVARIANTS)
 
-all: fastqc trim variants
+TINDEX = $(TARGET).bwt
+$(TINDEX): $(TARGET)
+	bwa index $(TARGET)
 
-.PHONY: all fastqc trim variants
+TALIGNMENT = aln.target.sam
+$(TALIGNMENT): $(TINDEX) $(SUBSAMPLED1)
+	bwa mem -t $(CPU) $(TARGET) $(SUBSAMPLED1) $(SUBSAMPLED2) > $(TALIGNMENT)
+
+TSORTEDALIGN = aln.target.sorted.bam
+$(TSORTEDALIGN): $(TALIGNMENT)
+	samtools view -bS $(TALIGNMENT) -q 25 -f 2 -F 256 -o aln.target.bam && \
+	samtools sort aln.target.bam aln.target.sorted
+
+BTINDEX = $(TSORTEDALIGN).bai
+$(BTINDEX): $(TSORTEDALIGN)
+	samtools index $(TSORTEDALIGN)
+
+MASK = mask.bed
+$(MASK): $(TSORTEDALIGN)
+	bedtools genomecov -ibam $(TSORTEDALIGN) -bg | awk '{if ($$4 < $(TARGETDEPTH)) print $$0}' > $(MASK)
+
+REPEATS = repeats.bed
+$(REPEATS): $(GENOME)
+	nucmer --maxmatch --nosimplify $(GENOME) $(GENOME) && \
+	show-coords -r -T out.delta -H | tail -n+2 > repeats.txt && \
+	awk '{print $$8"\t"$$1"\t"$$2}' repeats.txt > $(REPEATS)
+
+PARSNPOUT = parsnp/prasnp.ggr
+$(PARSNPOUT): $(GENOME) $(GBK) $(TARGET) $(MASK) $(REPEATS)
+	mkdir -p genomes && \
+	bedtools maskfasta -fi $(GENOME) -bed $(REPEATS) -fo genomes/$(shell basename $(GENOME))
+	bedtools maskfasta -fi $(TARGET) -bed $(MASK) -fo genomes/$(shell basename $(TARGET))
+	$(PARSNP)/parsnp -g $(GBK) -r genomes/$(GENOME) -d genomes -p $(CPU) -v -c -o parsnp
+
+ALIGNVARIANTS = align.vcf
+$(ALIGNVARIANTS): $(PARSNPOUT) 
+	harvesttools -i $(PARSNPOUT) -V $(ALIGNVARIANTS)
+alignvariants: $(ALIGNVARIANTS)
+
+all: fastqc trim mapvariants alignvariants
+
+.PHONY: all fastqc trim mapvariants alignvariants
