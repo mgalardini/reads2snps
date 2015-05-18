@@ -13,13 +13,13 @@ PARSNP = Parsnp-Linux64-v1.2
 JAVA7 = jre1.7.0_76/bin/java
 JAVAMEM = 24
 CPU = 10
-TARGETDEPTH = 10
+TARGETDEPTH = 4
 PLOIDY = 1
 THETA = 0.05
 SPECIES = ecoli
 MAXCOVERAGE = 100
 SEED = 100
-FILTER = -f "DP > 10" -g "GQ > 20"
+FILTER = -f "DP > 4" -g "GQ > 20"
 
 # Anything below this point should not be changed
 
@@ -146,7 +146,7 @@ $(REPEATS): $(GENOME)
 	show-coords -r -T out.delta -H | tail -n+2 > repeats.txt && \
 	awk '{print $$8"\t"$$1"\t"$$2}' repeats.txt > $(REPEATS)
 
-PARSNPOUT = parsnp/prasnp.ggr
+PARSNPOUT = parsnp/parsnp.ggr
 $(PARSNPOUT): $(GENOME) $(GBK) $(TARGET) $(MASK) $(REPEATS)
 	mkdir -p genomes && \
 	bedtools maskfasta -fi $(GENOME) -bed $(REPEATS) -fo genomes/$(shell basename $(GENOME))
