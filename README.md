@@ -1,22 +1,38 @@
 reads2snps
 ==========
 
-From second generation sequencing reads to variant calling
+From second generation sequencing reads to variant calling.
+Also variant calling using pairwise whole genome alignment.
 
 Usage
 -----
 
-???
-
-Notes
------
-
-???
+To map reads to a target genome and call variants type `make map`.
+To run a whole genome alignment (with a mask on regions with low coverage),
+type `make align`; this assumes that reads from which de novo assembly has been
+derived are present. If they are not present, but a mask is known, just add a
+`mask.bed` file to the top-level directory. If neither masks or reads are
+available, the whole genome alignment can be run using the `make alignnoreads`.
 
 Prerequisites
 -------------
 
-???
+* Reference genome in Fasta and GenBank format
+* Map and aligning using reads:
+    * fastqc
+    * seq_crumbs
+    * python and biopython
+    * seqtk
+    * bwa
+    * samtools
+    * picard
+    * gatk
+    * freebayes
+    * vcflib
+* Whole genome alignment:
+    * mummer
+    * bedtools
+    * parsnp
 
 Copyright
 ---------
