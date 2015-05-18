@@ -34,6 +34,11 @@ Prerequisites
     * bedtools
     * parsnp
 
+Acknowledgements
+----------------
+
+Thanks to Omar Wagih (@omarwagih) for some hints on the `map` pipeline.
+
 Copyright
 ---------
 
