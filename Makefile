@@ -117,7 +117,7 @@ MAPVARIANTS = map.vcf
 $(MAPVARIANTS): $(RINDEX) $(REALIGN) $(GENOME)
 	freebayes -f $(GENOME) --ploidy $(PLOIDY) --theta $(THETA) --genotype-qualities --standard-filters $(REALIGN) > raw.vcf
 	vcffilter $(FILTER) raw.vcf > $(MAPVARIANTS) 
-mapvariants: $(MAPVARIANTS)
+map: $(MAPVARIANTS)
 
 TINDEX = $(TARGET).bwt
 $(TINDEX): $(TARGET)
@@ -156,8 +156,20 @@ $(PARSNPOUT): $(GENOME) $(GBK) $(TARGET) $(MASK) $(REPEATS)
 ALIGNVARIANTS = align.vcf
 $(ALIGNVARIANTS): $(PARSNPOUT) 
 	harvesttools -i $(PARSNPOUT) -V $(ALIGNVARIANTS)
-alignvariants: $(ALIGNVARIANTS)
+align: $(ALIGNVARIANTS)
 
-all: fastqc trim mapvariants alignvariants
+PARSNPOUT = parsnp/parsnp.ggr
+$(PARSNPOUT): $(GENOME) $(GBK) $(TARGET) $(REPEATS)
+	mkdir -p genomes && \
+	bedtools maskfasta -fi $(GENOME) -bed $(REPEATS) -fo genomes/$(shell basename $(GENOME))
+	cp $(TARGET) genomes
+	$(PARSNP)/parsnp -g $(GBK) -r genomes/$(GENOME) -d genomes -p $(CPU) -v -c -o parsnp
 
-.PHONY: all fastqc trim mapvariants alignvariants
+ALIGNVARIANTS = align.vcf
+$(ALIGNVARIANTS): $(PARSNPOUT) 
+	harvesttools -i $(PARSNPOUT) -V $(ALIGNVARIANTS)
+alignnoreads: $(ALIGNNOREADS)
+
+all: fastqc trim map align alignnoreads
+
+.PHONY: all fastqc trim map align alignnoreads
