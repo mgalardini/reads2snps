@@ -2,7 +2,6 @@
 READ1 = READ1.txt.gz
 READ2 = READ2.txt.gz
 GENOME = genome.fasta
-GBK = genome.gbk
 TARGET = target.fasta
 
 # Directories and parameters
@@ -147,11 +146,11 @@ $(REPEATS): $(GENOME)
 	awk '{print $$8"\t"$$1"\t"$$2}' repeats.txt > $(REPEATS)
 
 PARSNPOUT = parsnp/parsnp.ggr
-$(PARSNPOUT): $(GENOME) $(GBK) $(TARGET) $(MASK) $(REPEATS)
+$(PARSNPOUT): $(GENOME) $(TARGET) $(MASK) $(REPEATS)
 	mkdir -p genomes && \
 	bedtools maskfasta -fi $(GENOME) -bed $(REPEATS) -fo genomes/$(shell basename $(GENOME))
 	bedtools maskfasta -fi $(TARGET) -bed $(MASK) -fo genomes/$(shell basename $(TARGET))
-	$(PARSNP)/parsnp -g $(GBK) -r genomes/$(GENOME) -d genomes -p $(CPU) -v -c -o parsnp
+	$(PARSNP)/parsnp -r genomes/$(GENOME) -d genomes -p $(CPU) -v -c -o parsnp
 
 ALIGNVARIANTS = align.vcf
 $(ALIGNVARIANTS): $(PARSNPOUT) 
@@ -159,11 +158,11 @@ $(ALIGNVARIANTS): $(PARSNPOUT)
 align: $(ALIGNVARIANTS)
 
 PARSNPOUT = parsnp/parsnp.ggr
-$(PARSNPOUT): $(GENOME) $(GBK) $(TARGET) $(REPEATS)
+$(PARSNPOUT): $(GENOME) $(TARGET) $(REPEATS)
 	mkdir -p genomes && \
 	bedtools maskfasta -fi $(GENOME) -bed $(REPEATS) -fo genomes/$(shell basename $(GENOME))
 	cp $(TARGET) genomes
-	$(PARSNP)/parsnp -g $(GBK) -r genomes/$(GENOME) -d genomes -p $(CPU) -v -c -o parsnp
+	$(PARSNP)/parsnp -r genomes/$(GENOME) -d genomes -p $(CPU) -v -c -o parsnp
 
 ALIGNVARIANTS = align.vcf
 $(ALIGNVARIANTS): $(PARSNPOUT) 
