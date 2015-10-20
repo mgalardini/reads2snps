@@ -5,11 +5,11 @@ GENOME = genome.fasta
 TARGET = target.fasta
 
 # Directories and parameters
-FASTQC = FastQC/fastqc
-PICARD = picard-tools-1.119
-GATK = GATK
-PARSNP = Parsnp-Linux64-v1.2
-JAVA7 = jre1.7.0_76/bin/java
+FASTQC = $(SOFTDIR)FastQC/fastqc
+PICARD = $(SOFTDIR)picard-tools-1.119
+GATK = $(SOFTDIR)GATK
+PARSNP = $(SOFTDIR)Parsnp-Linux64-v1.2
+JAVA7 = $(SOFTDIR)jre1.7.0_76/bin/java
 JAVAMEM = 24
 CPU = 10
 TARGETDEPTH = 4
