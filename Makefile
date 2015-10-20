@@ -157,17 +157,17 @@ $(ALIGNVARIANTS): $(PARSNPOUT)
 	harvesttools -i $(PARSNPOUT) -V $(ALIGNVARIANTS)
 align: $(ALIGNVARIANTS)
 
-PARSNPOUT = parsnp/parsnp.ggr
-$(PARSNPOUT): $(GENOME) $(TARGET) $(REPEATS)
+PARSNPOUT1 = parsnp1/parsnp.ggr
+$(PARSNPOUT1): $(GENOME) $(TARGET) $(REPEATS)
 	mkdir -p genomes && \
 	bedtools maskfasta -fi $(GENOME) -bed $(REPEATS) -fo genomes/$(shell basename $(GENOME))
 	cp $(TARGET) genomes
-	$(PARSNP)/parsnp -r genomes/$(GENOME) -d genomes -p $(CPU) -v -c -o parsnp
+	$(PARSNP)/parsnp -r genomes/$(GENOME) -d genomes -p $(CPU) -v -c -o parsnp1
 
-ALIGNVARIANTS = align.vcf
-$(ALIGNVARIANTS): $(PARSNPOUT) 
-	harvesttools -i $(PARSNPOUT) -V $(ALIGNVARIANTS)
-alignnoreads: $(ALIGNNOREADS)
+ALIGNVARIANTS1 = align.nomap.vcf
+$(ALIGNVARIANTS1): $(PARSNPOUT1) 
+	harvesttools -i $(PARSNPOUT1) -V $(ALIGNVARIANTS1)
+alignnoreads: $(ALIGNVARIANTS1)
 
 all: fastqc trim map align alignnoreads
 
