@@ -95,6 +95,7 @@ $(REALIGN): $(DEDUPALIGN) $(GENOME) $(DINDEX)
 	   RGSM=anysample CREATE_INDEX=true && \
 	java -jar $(PICARD)/CreateSequenceDictionary.jar R=$(GENOME) \
 	    O=$(basename $(GENOME)).dict GENOME_ASSEMBLY=genome SPECIES=$(SPECIES)
+	samtools faidx $(GENOME)
 	$(JAVA7) -Xmx$(JAVAMEM)g -jar $(GATK)/GenomeAnalysisTK.jar \
 	   -T RealignerTargetCreator \
 	   -R $(GENOME) \
