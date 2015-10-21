@@ -155,7 +155,8 @@ $(PARSNPOUT): $(GENOME) $(TARGET) $(MASK) $(REPEATS)
 
 ALIGNVARIANTS = align.vcf
 $(ALIGNVARIANTS): $(PARSNPOUT) 
-	harvesttools -i $(PARSNPOUT) -V $(ALIGNVARIANTS)
+	harvesttools -i $(PARSNPOUT) -V $(ALIGNVARIANTS).vcf
+	$(SRCDIR)/parsnp2vcf $(ALIGNVARIANTS).vcf $(ALIGNVARIANTS) --template $(ALIGNVARIANTS).vcf
 align: $(ALIGNVARIANTS)
 
 PARSNPOUT1 = parsnp1/parsnp.ggr
@@ -167,7 +168,8 @@ $(PARSNPOUT1): $(GENOME) $(TARGET) $(REPEATS)
 
 ALIGNVARIANTS1 = align.nomap.vcf
 $(ALIGNVARIANTS1): $(PARSNPOUT1) 
-	harvesttools -i $(PARSNPOUT1) -V $(ALIGNVARIANTS1)
+	harvesttools -i $(PARSNPOUT1) -V $(ALIGNVARIANTS1).vcf
+	$(SRCDIR)/parsnp2vcf $(ALIGNVARIANTS1).vcf $(ALIGNVARIANTS1) --template $(ALIGNVARIANTS1).vcf
 alignnoreads: $(ALIGNVARIANTS1)
 
 all: fastqc trim map align alignnoreads
