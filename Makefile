@@ -143,7 +143,7 @@ $(MASK): $(TSORTEDALIGN)
 REPEATS = repeats.bed
 $(REPEATS): $(GENOME)
 	nucmer --maxmatch --nosimplify $(GENOME) $(GENOME) && \
-	show-coords -r -T out.delta -H | tail -n+2 > repeats.txt && \
+	show-coords -r -T out.delta -H | awk '{if ($$1 != $$3 && $$2 != $$4) print $$0}' > repeats.txt && \
 	awk '{print $$8"\t"$$1"\t"$$2}' repeats.txt > $(REPEATS)
 
 PARSNPOUT = parsnp/parsnp.ggr
