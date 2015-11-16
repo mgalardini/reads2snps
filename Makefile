@@ -175,6 +175,8 @@ alignnoreads: $(ALIGNVARIANTS1)
 
 BRESEQOUT = $(CURDIR)/output/output.gd
 BRESEQVARIANTS = breseq.vcf
+PREAD1 = READ1.fq
+PREAD2 = READ2.fq
 $(PREAD1): $(TREAD1)
 	zcat $(TREAD1) > $(PREAD1)
 $(PREAD2): $(TREAD2)
