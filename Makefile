@@ -2,6 +2,7 @@
 READ1 = READ1.txt.gz
 READ2 = READ2.txt.gz
 GENOME = genome.fasta
+GBK = genome.gbk
 TARGET = target.fasta
 
 # Directories and parameters
@@ -172,6 +173,20 @@ $(ALIGNVARIANTS1): $(PARSNPOUT1)
 	$(SRCDIR)/parsnp2vcf $(ALIGNVARIANTS1).vcf $(ALIGNVARIANTS1) --template $(ALIGNVARIANTS1).vcf
 alignnoreads: $(ALIGNVARIANTS1)
 
-all: fastqc trim map align alignnoreads
+BRESEQOUT = $(CURDIR)/output.gd
+BRESEQVARIANTS = breseq.vcf
+$(PREAD1): $(TREAD1)
+	zcat $(TREAD1) > $(PREAD1)
+$(PREAD2): $(TREAD2)
+	zcat $(TREAD2) > $(PREAD2)
 
-.PHONY: all fastqc trim map align alignnoreads
+$(BRESEQOUT): $(PREAD1) $(PREAD2) $(GBK)
+	breseq -r $(GBK) $(PREAD1) $(PREAD2) -j $(CPU)
+
+$(BRESEQVARIANTS): $(BRESEQOUT) $(GBK)
+	gdtools GD2VCF -r $(GBK) $(BRESEQOUT) -o $(BRESEQVARIANTS)
+breseq: $(BRESEQVARIANTS)
+
+all: fastqc trim map align alignnoreads breseq
+
+.PHONY: all fastqc trim map align alignnoreads breseq
