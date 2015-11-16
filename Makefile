@@ -173,7 +173,7 @@ $(ALIGNVARIANTS1): $(PARSNPOUT1)
 	$(SRCDIR)/parsnp2vcf $(ALIGNVARIANTS1).vcf $(ALIGNVARIANTS1) --template $(ALIGNVARIANTS1).vcf
 alignnoreads: $(ALIGNVARIANTS1)
 
-BRESEQOUT = $(CURDIR)/output.gd
+BRESEQOUT = $(CURDIR)/output/output.gd
 BRESEQVARIANTS = breseq.vcf
 $(PREAD1): $(TREAD1)
 	zcat $(TREAD1) > $(PREAD1)
