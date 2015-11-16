@@ -18,7 +18,7 @@ THETA = 0.05
 SPECIES = ecoli
 MAXCOVERAGE = 100
 SEED = 100
-FILTER = -f "DP > 4" -g "GQ > 20"
+FILTER = -f "DP > $(TARGETDEPTH)" -g "GQ > 20"
 
 # Anything below this point should not be changed
 
