@@ -175,10 +175,10 @@ alignnoreads: $(ALIGNVARIANTS1)
 
 BRESEQOUT = $(CURDIR)/output/output.gd
 BRESEQVARIANTS = breseq.vcf
-PREAD1 = PREAD1.txt.gz
+PREAD1 = PREAD1.fq
 $(PREAD1): $(READ1)
 	zcat $(READ1) > $(PREAD1)
-PREAD2 = PREAD2.txt.gz
+PREAD2 = PREAD2.fq
 $(PREAD2): $(READ2)
 	zcat $(READ2) > $(PREAD2)
 
