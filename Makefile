@@ -55,13 +55,13 @@ $(TREAD1): $(TRIMDIR) $(READ1) $(READ2)
 	deinterleave_pairs -z -o $(TREAD1) $(TREAD2)
 trim: $(TREAD1)
 
-SUBSAMPLED1 = $(addsuffix .sub.fq.gz, $(TRIMDIR)/$(basename $(notdir $(READ1)) .txt))
-SUBSAMPLED2 = $(addsuffix .sub.fq.gz, $(TRIMDIR)/$(basename $(notdir $(READ2)) .txt))
+SUBSAMPLED1 = $(addsuffix .sub.fq.gz, $(basename $(notdir $(READ1)) .txt.gz))
+SUBSAMPLED2 = $(addsuffix .sub.fq.gz, $(basename $(notdir $(READ2)) .txt.gz))
 
-$(SUBSAMPLED1): $(TREAD1) $(GENOME)
-	sample=$$($(SRCDIR)/get_subsample $(GENOME) $$(interleave_pairs $(TREAD1) $(TREAD2) | count_seqs | awk '{print $$2}') --coverage 100) && \
-        seqtk sample -s$(SEED) $(TREAD1) $$sample > $(SUBSAMPLED1) && \
-	seqtk sample -s$(SEED) $(TREAD2) $$sample > $(SUBSAMPLED2)	
+$(SUBSAMPLED1): $(READ1) $(READ2) $(GENOME)
+	sample=$$($(SRCDIR)/get_subsample $(GENOME) $$(interleave_pairs $(READ1) $(READ2) | count_seqs | awk '{print $$2}') --coverage 100) && \
+        seqtk sample -s$(SEED) $(READ1) $$sample > $(SUBSAMPLED1) && \
+	seqtk sample -s$(SEED) $(READ2) $$sample > $(SUBSAMPLED2)	
 
 # Alignment
 GINDEX = $(GENOME).bwt
@@ -175,10 +175,10 @@ alignnoreads: $(ALIGNVARIANTS1)
 
 BRESEQOUT = $(CURDIR)/output/output.gd
 BRESEQVARIANTS = breseq.vcf
-$(PREAD1): $(TREAD1)
-	zcat $(TREAD1) > $(PREAD1)
-$(PREAD2): $(TREAD2)
-	zcat $(TREAD2) > $(PREAD2)
+$(PREAD1): $(READ1)
+	zcat $(READ1) > $(PREAD1)
+$(PREAD2): $(READ2)
+	zcat $(READ2) > $(PREAD2)
 
 $(BRESEQOUT): $(PREAD1) $(PREAD2) $(GBK)
 	breseq -r $(GBK) $(PREAD1) $(PREAD2) -j $(CPU)
