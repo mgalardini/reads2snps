@@ -189,6 +189,11 @@ $(BRESEQVARIANTS): $(BRESEQOUT) $(GBK)
 	gdtools GD2VCF -r $(GBK) $(BRESEQOUT) -o $(BRESEQVARIANTS)
 breseq: $(BRESEQVARIANTS)
 
-all: fastqc trim map align alignnoreads breseq
+COVERAGE = coverage.bed
+$(COVERAGE): $(TSORTEDALIGN)
+	bedtools genomecov -ibam $(TSORTEDALIGN) -bga > $(COVERAGE)
+coverage: $(COVERAGE)
 
-.PHONY: all fastqc trim map align alignnoreads breseq
+all: fastqc trim map align alignnoreads breseq coverage
+
+.PHONY: all fastqc trim map align alignnoreads breseq coverage
