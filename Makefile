@@ -55,8 +55,8 @@ $(TREAD1): $(TRIMDIR) $(READ1) $(READ2)
 	deinterleave_pairs -z -o $(TREAD1) $(TREAD2)
 trim: $(TREAD1)
 
-SUBSAMPLED1 = $(addsuffix .sub.fq.gz, $(basename $(notdir $(READ1)) .txt.gz))
-SUBSAMPLED2 = $(addsuffix .sub.fq.gz, $(basename $(notdir $(READ2)) .txt.gz))
+SUBSAMPLED1 = $(addsuffix .sub.fq.gz, $(basename $(notdir $(READ1))))
+SUBSAMPLED2 = $(addsuffix .sub.fq.gz, $(basename $(notdir $(READ2))))
 
 $(SUBSAMPLED1): $(READ1) $(READ2) $(GENOME)
 	sample=$$($(SRCDIR)/get_subsample $(GENOME) $$(interleave_pairs $(READ1) $(READ2) | count_seqs | awk '{print $$2}') --coverage 100) && \
