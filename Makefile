@@ -191,7 +191,7 @@ breseq: $(BRESEQVARIANTS)
 
 COVERAGE = coverage.bed
 $(COVERAGE): $(SORTEDALIGN)
-	bedtools genomecov -ibam $(SORTEDALIGN) -bga > $(COVERAGE)
+	bedtools genomecov -ibam $(SORTEDALIGN) -d > $(COVERAGE)
 coverage: $(COVERAGE)
 
 all: fastqc trim map align alignnoreads breseq coverage
