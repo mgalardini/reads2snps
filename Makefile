@@ -55,13 +55,13 @@ $(TREAD1): $(TRIMDIR) $(READ1) $(READ2)
 	deinterleave_pairs -z -o $(TREAD1) $(TREAD2)
 trim: $(TREAD1)
 
-SUBSAMPLED1 = $(addsuffix .sub.fq.gz, $(TRIMDIR)/$(basename $(notdir $(READ1)) .txt))
-SUBSAMPLED2 = $(addsuffix .sub.fq.gz, $(TRIMDIR)/$(basename $(notdir $(READ2)) .txt))
+SUBSAMPLED1 = $(addsuffix .sub.fq.gz, $(basename $(notdir $(READ1))))
+SUBSAMPLED2 = $(addsuffix .sub.fq.gz, $(basename $(notdir $(READ2))))
 
-$(SUBSAMPLED1): $(TREAD1) $(GENOME)
-	sample=$$($(SRCDIR)/get_subsample $(GENOME) $$(interleave_pairs $(TREAD1) $(TREAD2) | count_seqs | awk '{print $$2}') --coverage 100) && \
-        seqtk sample -s$(SEED) $(TREAD1) $$sample > $(SUBSAMPLED1) && \
-	seqtk sample -s$(SEED) $(TREAD2) $$sample > $(SUBSAMPLED2)	
+$(SUBSAMPLED1): $(READ1) $(READ2) $(GENOME)
+	sample=$$($(SRCDIR)/get_subsample $(GENOME) $$(interleave_pairs $(READ1) $(READ2) | count_seqs | awk '{print $$2}') --coverage 100) && \
+        seqtk sample -s$(SEED) $(READ1) $$sample > $(SUBSAMPLED1) && \
+	seqtk sample -s$(SEED) $(READ2) $$sample > $(SUBSAMPLED2)	
 
 # Alignment
 GINDEX = $(GENOME).bwt
@@ -189,6 +189,11 @@ $(BRESEQVARIANTS): $(BRESEQOUT) $(GBK)
 	gdtools GD2VCF -r $(GBK) $(BRESEQOUT) -o $(BRESEQVARIANTS)
 breseq: $(BRESEQVARIANTS)
 
-all: fastqc trim map align alignnoreads breseq
+COVERAGE = coverage.bed
+$(COVERAGE): $(SORTEDALIGN)
+	bedtools genomecov -ibam $(SORTEDALIGN) -d > $(COVERAGE)
+coverage: $(COVERAGE)
 
-.PHONY: all fastqc trim map align alignnoreads breseq
+all: fastqc trim map align alignnoreads breseq coverage
+
+.PHONY: all fastqc trim map align alignnoreads breseq coverage
