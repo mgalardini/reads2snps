@@ -7,7 +7,8 @@ Also variant calling using pairwise whole genome alignment.
 Usage
 -----
 
-To map reads to a target genome and call variants type `make map`.
+To map reads to a target genome and call variants type `make map` or `make breseq`.
+To get base-by-base reads coverage information type `make coverage`.
 To run a whole genome alignment (with a mask on regions with low coverage),
 type `make align`; this assumes that reads from which de novo assembly has been
 derived are present. If they are not present, but a mask is known, just add a
@@ -29,6 +30,7 @@ Prerequisites
     * gatk
     * freebayes
     * vcflib
+    * breseq
 * Whole genome alignment:
     * mummer
     * bedtools
